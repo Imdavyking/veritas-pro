@@ -64,6 +64,7 @@ npm run deploy:testnet
 Get testnet STT: [somnia.network/faucet](https://somnia.network/faucet)
 
 Fund the deployed contract with STT for agent fees:
+
 ```bash
 cast send <CONTRACT_ADDRESS> --value 5ether \
   --private-key $PRIVATE_KEY \
@@ -105,33 +106,33 @@ Dispute path: `raiseDispute()` → LLM Inference re-examines → second verdict 
 
 ## Somnia agents used
 
-| Agent               | ID                     | Cost/validator | Role                                          |
-|---------------------|------------------------|----------------|-----------------------------------------------|
-| LLM Parse Website   | `16158985798574699147` | 0.10 STT       | Reads resolution source, extracts yes/no      |
-| LLM Inference       | `11278800581377827547` | 0.07 STT       | Re-examines verdict on dispute (stricter prompt) |
+| Agent             | ID                     | Cost/validator | Role                                             |
+| ----------------- | ---------------------- | -------------- | ------------------------------------------------ |
+| LLM Parse Website | `12875401142070969085` | 0.10 STT       | Reads resolution source, extracts yes/no         |
+| LLM Inference     | `12847293847561029384` | 0.07 STT       | Re-examines verdict on dispute (stricter prompt) |
 
 Resolution fee: `getRequestDeposit() + 0.10 × 3 STT ≈ 0.33 STT`
-Dispute fee:    `getRequestDeposit() + 0.07 × 3 STT ≈ 0.24 STT`
+Dispute fee: `getRequestDeposit() + 0.07 × 3 STT ≈ 0.24 STT`
 
 ---
 
 ## Network
 
-| | |
-|---|---|
-| Chain        | Somnia Testnet |
-| Chain ID     | 50312 |
-| RPC          | https://dream-rpc.somnia.network |
-| Explorer     | https://shannon-explorer.somnia.network |
-| Platform     | `0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776` |
-| Agent explorer | https://agents.testnet.somnia.network/ |
+|                |                                              |
+| -------------- | -------------------------------------------- |
+| Chain          | Somnia Testnet                               |
+| Chain ID       | 50312                                        |
+| RPC            | https://dream-rpc.somnia.network             |
+| Explorer       | https://shannon-explorer.somnia.network      |
+| Platform       | `0x037Bb9C718F3f7fe5eCBDB0b600D607b52706776` |
+| Agent explorer | https://agents.testnet.somnia.network/       |
 
 ---
 
 ## Demo flow (for judges)
 
 1. Open frontend → **connect wallet** (MetaMask on Somnia testnet)
-2. Click **+ create** → enter a live question, e.g. *"Will ETH close above $3,500 today?"* with source `coinmarketcap.com`
+2. Click **+ create** → enter a live question, e.g. _"Will ETH close above $3,500 today?"_ with source `coinmarketcap.com`
 3. Set deadline 5 minutes from now → **deploy market**
 4. Bet YES or NO with small STT amounts
 5. After deadline → click **trigger resolution**
@@ -145,8 +146,8 @@ Total time: **~30 seconds on testnet** from trigger to payout.
 
 ## Business model
 
-| Revenue source | Rate |
-|---|---|
-| Protocol fee | 1% of resolved market pool |
+| Revenue source | Rate                       |
+| -------------- | -------------------------- |
+| Protocol fee   | 1% of resolved market pool |
 
 At $1M daily volume → $10k/day revenue. Agent cost per resolution ~$0.33 STT.

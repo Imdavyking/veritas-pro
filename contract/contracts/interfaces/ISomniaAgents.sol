@@ -12,8 +12,8 @@ pragma solidity ^0.8.20;
 //
 //  Agent IDs (same on both networks):
 //    JSON API Request    13174292974160097713   0.03 STT / validator
-//    LLM Inference       11278800581377827547   0.07 STT / validator
-//    LLM Parse Website   16158985798574699147   0.10 STT / validator
+//    LLM Inference       12847293847561029384   0.07 STT / validator
+//    LLM Parse Website   12875401142070969085   0.10 STT / validator
 // ─────────────────────────────────────────────────────────────
 
 // ── Enums / structs shared across all agent calls ─────────────
@@ -25,15 +25,15 @@ enum ResponseStatus {
 }
 
 struct Response {
-    bytes   result;      // ABI-encoded return value
+    bytes result; // ABI-encoded return value
     bytes32 receiptHash; // on-chain audit hash of what the agent read/produced
 }
 
 struct Request {
     uint256 agentId;
     address callbackContract;
-    bytes4  callbackSelector;
-    bytes   payload;
+    bytes4 callbackSelector;
+    bytes payload;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -47,10 +47,10 @@ interface IAgentRequesterHandler {
     /// @param status     Success | Failed | TimedOut
     /// @param details    Original request params (for audit / routing)
     function handleResponse(
-        uint256        requestId,
+        uint256 requestId,
         Response[] memory responses,
         ResponseStatus status,
-        Request    memory details
+        Request memory details
     ) external;
 }
 
@@ -72,13 +72,13 @@ interface IAgentRequester {
     function createRequest(
         uint256 agentId,
         address callbackContract,
-        bytes4  callbackSelector,
-        bytes   calldata payload
+        bytes4 callbackSelector,
+        bytes calldata payload
     ) external payable returns (uint256 requestId);
 }
 
 // ─────────────────────────────────────────────────────────────
-//  ILLMParseWebsiteAgent   agentId: 16158985798574699147
+//  ILLMParseWebsiteAgent   agentId: 12875401142070969085
 //  Scrapes a URL and extracts structured data via LLM.
 // ─────────────────────────────────────────────────────────────
 interface ILLMParseWebsiteAgent {
@@ -100,15 +100,15 @@ interface ILLMParseWebsiteAgent {
 }
 
 // ─────────────────────────────────────────────────────────────
-//  ILLMInferenceAgent   agentId: 11278800581377827547
+//  ILLMInferenceAgent   agentId: 12847293847561029384
 //  Deterministic on-chain LLM inference (Qwen3-30B, temp=0).
 // ─────────────────────────────────────────────────────────────
 interface ILLMInferenceAgent {
     /// Single-turn classification constrained to one of `allowedValues`.
     /// Returns: ABI-encoded string matching one of allowedValues
     function inferString(
-        string   calldata systemPrompt,
-        string   calldata userMessage,
+        string calldata systemPrompt,
+        string calldata userMessage,
         string[] calldata allowedValues
     ) external returns (string memory);
 
@@ -125,7 +125,7 @@ interface ILLMInferenceAgent {
     /// messages: alternating user/assistant turns as ABI-encoded string[]
     /// Returns: ABI-encoded string
     function inferChat(
-        string   calldata systemPrompt,
+        string calldata systemPrompt,
         string[] calldata messages
     ) external returns (string memory);
 }
@@ -142,7 +142,7 @@ interface IJsonApiAgent {
     function fetchUint(
         string calldata url,
         string calldata selector,
-        uint8  decimals
+        uint8 decimals
     ) external returns (uint256);
 
     /// Same as fetchUint but returns a raw string value.

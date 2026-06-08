@@ -26,7 +26,6 @@ pragma solidity ^0.8.20;
 import "./interfaces/ISomniaAgents.sol";
 
 contract Veritas is IAgentRequesterHandler {
-
     // ─── Platform ────────────────────────────────────────────────
 
     /// Somnia platform contract (set in constructor).
@@ -36,8 +35,8 @@ contract Veritas is IAgentRequesterHandler {
 
     // ─── Agent IDs (identical on testnet + mainnet) ───────────────
 
-    uint256 public constant AGENT_LLM_PARSE  = 16158985798574699147;
-    uint256 public constant AGENT_LLM_INFER  = 11278800581377827547;
+    uint256 public constant AGENT_LLM_PARSE = 12875401142070969085;
+    uint256 public constant AGENT_LLM_INFER = 12847293847561029384;
 
     // ─── Cost constants ───────────────────────────────────────────
 
@@ -57,11 +56,11 @@ contract Veritas is IAgentRequesterHandler {
     // ─── Types ────────────────────────────────────────────────────
 
     enum MarketStatus {
-        Open,           // accepting bets
+        Open, // accepting bets
         PendingResolve, // resolution agent request in-flight
-        Resolved,       // outcome committed, payouts available
-        Disputed,       // dispute agent request in-flight
-        Cancelled       // unrecoverable failure state
+        Resolved, // outcome committed, payouts available
+        Disputed, // dispute agent request in-flight
+        Cancelled // unrecoverable failure state
     }
 
     enum Outcome {
@@ -71,24 +70,24 @@ contract Veritas is IAgentRequesterHandler {
     }
 
     struct Market {
-        string       question;         // "Will ETH > $3500 at midnight UTC?"
-        string       resolutionSource; // domain hint: "coinmarketcap.com"
-        uint256      deadline;         // unix timestamp — bets close, resolution opens
-        uint256      yesPool;          // total STT staked YES (wei)
-        uint256      noPool;           // total STT staked NO  (wei)
-        Outcome      outcome;
+        string question; // "Will ETH > $3500 at midnight UTC?"
+        string resolutionSource; // domain hint: "coinmarketcap.com"
+        uint256 deadline; // unix timestamp — bets close, resolution opens
+        uint256 yesPool; // total STT staked YES (wei)
+        uint256 noPool; // total STT staked NO  (wei)
+        Outcome outcome;
         MarketStatus status;
-        uint256      resolveRequestId;
-        uint256      disputeRequestId;
-        uint256      disputeDeadline;  // 2h window after resolution
-        address      creator;
+        uint256 resolveRequestId;
+        uint256 disputeRequestId;
+        uint256 disputeDeadline; // 2h window after resolution
+        address creator;
     }
 
     // ─── Storage ──────────────────────────────────────────────────
 
     uint256 public marketCount;
 
-    mapping(uint256 => Market)  public markets;
+    mapping(uint256 => Market) public markets;
 
     /// marketId => user => amount staked YES (wei)
     mapping(uint256 => mapping(address => uint256)) public yesStakes;
@@ -97,7 +96,7 @@ contract Veritas is IAgentRequesterHandler {
     /// requestId => marketId (for callback routing)
     mapping(uint256 => uint256) private _requestMarket;
     /// requestId => true if this is a dispute (not initial resolution)
-    mapping(uint256 => bool)    private _requestIsDispute;
+    mapping(uint256 => bool) private _requestIsDispute;
     /// marketId => user => has claimed payout
     mapping(uint256 => mapping(address => bool)) public claimed;
 
@@ -106,15 +105,15 @@ contract Veritas is IAgentRequesterHandler {
     event MarketCreated(
         uint256 indexed id,
         address indexed creator,
-        string  question,
-        string  resolutionSource,
+        string question,
+        string resolutionSource,
         uint256 deadline
     );
 
     event BetPlaced(
         uint256 indexed id,
         address indexed bettor,
-        bool    isYes,
+        bool isYes,
         uint256 amount
     );
 
@@ -128,7 +127,7 @@ contract Veritas is IAgentRequesterHandler {
         uint256 indexed id,
         Outcome outcome,
         bytes32 receiptHash,
-        bool    wasDisputed
+        bool wasDisputed
     );
 
     event DisputeRaised(
@@ -164,7 +163,7 @@ contract Veritas is IAgentRequesterHandler {
     // ─── Constructor ──────────────────────────────────────────────
 
     constructor(address platform_, address feeRecipient_) {
-        platform     = IAgentRequester(platform_);
+        platform = IAgentRequester(platform_);
         feeRecipient = feeRecipient_;
     }
 
@@ -180,26 +179,32 @@ contract Veritas is IAgentRequesterHandler {
         string calldata resolutionSource,
         uint256 deadline
     ) external returns (uint256 id) {
-        if (bytes(question).length == 0)   revert EmptyQuestion();
-        if (deadline <= block.timestamp)    revert DeadlineInPast();
+        if (bytes(question).length == 0) revert EmptyQuestion();
+        if (deadline <= block.timestamp) revert DeadlineInPast();
 
         id = marketCount++;
 
         markets[id] = Market({
-            question:         question,
+            question: question,
             resolutionSource: resolutionSource,
-            deadline:         deadline,
-            yesPool:          0,
-            noPool:           0,
-            outcome:          Outcome.Unset,
-            status:           MarketStatus.Open,
+            deadline: deadline,
+            yesPool: 0,
+            noPool: 0,
+            outcome: Outcome.Unset,
+            status: MarketStatus.Open,
             resolveRequestId: 0,
             disputeRequestId: 0,
-            disputeDeadline:  0,
-            creator:          msg.sender
+            disputeDeadline: 0,
+            creator: msg.sender
         });
 
-        emit MarketCreated(id, msg.sender, question, resolutionSource, deadline);
+        emit MarketCreated(
+            id,
+            msg.sender,
+            question,
+            resolutionSource,
+            deadline
+        );
     }
 
     // ─── Betting ──────────────────────────────────────────────────
@@ -216,16 +221,16 @@ contract Veritas is IAgentRequesterHandler {
 
     function _bet(uint256 id, bool isYes) internal {
         Market storage m = markets[id];
-        if (m.status != MarketStatus.Open)  revert NotOpen();
-        if (block.timestamp >= m.deadline)  revert BettingClosed();
-        if (msg.value == 0)                 revert ZeroBet();
+        if (m.status != MarketStatus.Open) revert NotOpen();
+        if (block.timestamp >= m.deadline) revert BettingClosed();
+        if (msg.value == 0) revert ZeroBet();
 
         if (isYes) {
-            m.yesPool              += msg.value;
+            m.yesPool += msg.value;
             yesStakes[id][msg.sender] += msg.value;
         } else {
-            m.noPool               += msg.value;
-            noStakes[id][msg.sender]  += msg.value;
+            m.noPool += msg.value;
+            noStakes[id][msg.sender] += msg.value;
         }
 
         emit BetPlaced(id, msg.sender, isYes, msg.value);
@@ -239,11 +244,11 @@ contract Veritas is IAgentRequesterHandler {
     ///         Required: msg.value >= platform.getRequestDeposit() + 0.10 * 3 STT
     function triggerResolution(uint256 id) external payable {
         Market storage m = markets[id];
-        if (m.status != MarketStatus.Open)         revert NotOpen();
-        if (block.timestamp < m.deadline)           revert DeadlineNotPassed();
+        if (m.status != MarketStatus.Open) revert NotOpen();
+        if (block.timestamp < m.deadline) revert DeadlineNotPassed();
 
         uint256 fee = _agentFee(COST_PARSE);
-        if (msg.value < fee)                        revert InsufficientFee();
+        if (msg.value < fee) revert InsufficientFee();
 
         // Build Parse Website (search mode) payload.
         // Agent searches resolutionSource for news about the question,
@@ -251,11 +256,14 @@ contract Veritas is IAgentRequesterHandler {
         bytes memory payload = abi.encodeWithSelector(
             ILLMParseWebsiteAgent.parseWebsiteSearch.selector,
             m.resolutionSource,
-            string(abi.encodePacked(
-                "Has the following prediction come true as of today? ",
-                "Answer ONLY with the word 'yes' or 'no'. ",
-                "Prediction: ", m.question
-            )),
+            string(
+                abi.encodePacked(
+                    "Has the following prediction come true as of today? ",
+                    "Answer ONLY with the word 'yes' or 'no'. ",
+                    "Prediction: ",
+                    m.question
+                )
+            ),
             "outcome"
         );
 
@@ -266,9 +274,9 @@ contract Veritas is IAgentRequesterHandler {
             payload
         );
 
-        m.status           = MarketStatus.PendingResolve;
+        m.status = MarketStatus.PendingResolve;
         m.resolveRequestId = requestId;
-        _requestMarket[requestId]    = id + 1; // +1 so 0 means unset
+        _requestMarket[requestId] = id + 1; // +1 so 0 means unset
         _requestIsDispute[requestId] = false;
 
         // Refund excess
@@ -285,11 +293,11 @@ contract Veritas is IAgentRequesterHandler {
     ///         Required: msg.value >= platform.getRequestDeposit() + 0.07 * 3 STT
     function raiseDispute(uint256 id) external payable {
         Market storage m = markets[id];
-        if (m.status != MarketStatus.Resolved)    revert NotResolved();
-        if (block.timestamp > m.disputeDeadline)  revert DisputeWindowClosed();
+        if (m.status != MarketStatus.Resolved) revert NotResolved();
+        if (block.timestamp > m.disputeDeadline) revert DisputeWindowClosed();
 
         uint256 fee = _agentFee(COST_INFER);
-        if (msg.value < fee)                      revert InsufficientFee();
+        if (msg.value < fee) revert InsufficientFee();
 
         string[] memory allowed = new string[](2);
         allowed[0] = "yes";
@@ -297,17 +305,27 @@ contract Veritas is IAgentRequesterHandler {
 
         bytes memory payload = abi.encodeWithSelector(
             ILLMInferenceAgent.inferString.selector,
-            string(abi.encodePacked(
-                "You are an impartial judge reviewing a disputed prediction market resolution. ",
-                "Return only 'yes' if the prediction came true, or 'no' if it did not. ",
-                "Be conservative: uphold the existing verdict unless you find clear evidence to the contrary."
-            )),
-            string(abi.encodePacked(
-                "Prediction: ", m.question, "\n",
-                "Resolution source used: ", m.resolutionSource, "\n",
-                "Current verdict: ", m.outcome == Outcome.Yes ? "yes" : "no", "\n",
-                "Re-evaluate and return your final answer."
-            )),
+            string(
+                abi.encodePacked(
+                    "You are an impartial judge reviewing a disputed prediction market resolution. ",
+                    "Return only 'yes' if the prediction came true, or 'no' if it did not. ",
+                    "Be conservative: uphold the existing verdict unless you find clear evidence to the contrary."
+                )
+            ),
+            string(
+                abi.encodePacked(
+                    "Prediction: ",
+                    m.question,
+                    "\n",
+                    "Resolution source used: ",
+                    m.resolutionSource,
+                    "\n",
+                    "Current verdict: ",
+                    m.outcome == Outcome.Yes ? "yes" : "no",
+                    "\n",
+                    "Re-evaluate and return your final answer."
+                )
+            ),
             allowed
         );
 
@@ -318,9 +336,9 @@ contract Veritas is IAgentRequesterHandler {
             payload
         );
 
-        m.status           = MarketStatus.Disputed;
+        m.status = MarketStatus.Disputed;
         m.disputeRequestId = requestId;
-        _requestMarket[requestId]    = id + 1;
+        _requestMarket[requestId] = id + 1;
         _requestIsDispute[requestId] = true;
 
         uint256 excess = msg.value - fee;
@@ -334,16 +352,16 @@ contract Veritas is IAgentRequesterHandler {
     /// @notice Called by the Somnia platform with the agent result.
     ///         Writes the outcome and (if resolved) opens the dispute window.
     function handleResponse(
-        uint256        requestId,
+        uint256 requestId,
         Response[] memory responses,
         ResponseStatus status,
-        Request    memory /* details */
+        Request memory /* details */
     ) external override {
-        if (msg.sender != address(platform))         revert NotPlatform();
-        if (_requestMarket[requestId] == 0)          revert UnknownRequest();
+        if (msg.sender != address(platform)) revert NotPlatform();
+        if (_requestMarket[requestId] == 0) revert UnknownRequest();
 
-        uint256 id       = _requestMarket[requestId] - 1;
-        bool isDispute   = _requestIsDispute[requestId];
+        uint256 id = _requestMarket[requestId] - 1;
+        bool isDispute = _requestIsDispute[requestId];
         Market storage m = markets[id];
 
         delete _requestMarket[requestId];
@@ -357,7 +375,7 @@ contract Veritas is IAgentRequesterHandler {
 
         // ── Decode verdict ──
         string memory verdict = abi.decode(responses[0].result, (string));
-        Outcome newOutcome    = _parseVerdict(verdict);
+        Outcome newOutcome = _parseVerdict(verdict);
 
         // Unparseable: reset for retry
         if (newOutcome == Outcome.Unset) {
@@ -365,11 +383,16 @@ contract Veritas is IAgentRequesterHandler {
             return;
         }
 
-        m.outcome         = newOutcome;
-        m.status          = MarketStatus.Resolved;
+        m.outcome = newOutcome;
+        m.status = MarketStatus.Resolved;
         m.disputeDeadline = block.timestamp + 2 hours;
 
-        emit MarketResolved(id, newOutcome, responses[0].receiptHash, isDispute);
+        emit MarketResolved(
+            id,
+            newOutcome,
+            responses[0].receiptHash,
+            isDispute
+        );
     }
 
     // ─── Payout ───────────────────────────────────────────────────
@@ -378,19 +401,19 @@ contract Veritas is IAgentRequesterHandler {
     ///         Can only be called after the 2h dispute window closes.
     function claimPayout(uint256 id) external {
         Market storage m = markets[id];
-        if (m.status != MarketStatus.Resolved)       revert NotResolved();
-        if (block.timestamp <= m.disputeDeadline)     revert DisputeWindowOpen();
-        if (claimed[id][msg.sender])                  revert AlreadyClaimed();
+        if (m.status != MarketStatus.Resolved) revert NotResolved();
+        if (block.timestamp <= m.disputeDeadline) revert DisputeWindowOpen();
+        if (claimed[id][msg.sender]) revert AlreadyClaimed();
 
         uint256 stake;
         uint256 winPool;
         uint256 totalPool = m.yesPool + m.noPool;
 
         if (m.outcome == Outcome.Yes) {
-            stake   = yesStakes[id][msg.sender];
+            stake = yesStakes[id][msg.sender];
             winPool = m.yesPool;
         } else {
-            stake   = noStakes[id][msg.sender];
+            stake = noStakes[id][msg.sender];
             winPool = m.noPool;
         }
 
@@ -398,8 +421,8 @@ contract Veritas is IAgentRequesterHandler {
         claimed[id][msg.sender] = true;
 
         // Proportional payout from total pool, minus 1% protocol fee
-        uint256 gross  = (stake * totalPool) / winPool;
-        uint256 fee    = (gross * FEE_BPS) / 10_000;
+        uint256 gross = (stake * totalPool) / winPool;
+        uint256 fee = (gross * FEE_BPS) / 10_000;
         uint256 payout = gross - fee;
 
         if (fee > 0) payable(feeRecipient).transfer(fee);
@@ -416,9 +439,10 @@ contract Veritas is IAgentRequesterHandler {
     }
 
     /// @notice Return a user's stakes on both sides of a market.
-    function getStakes(uint256 id, address user)
-        external view returns (uint256 yes, uint256 no)
-    {
+    function getStakes(
+        uint256 id,
+        address user
+    ) external view returns (uint256 yes, uint256 no) {
         return (yesStakes[id][user], noStakes[id][user]);
     }
 
@@ -434,14 +458,16 @@ contract Veritas is IAgentRequesterHandler {
 
     // ─── Internal helpers ─────────────────────────────────────────
 
-    function _agentFee(uint256 pricePerValidator) internal view returns (uint256) {
+    function _agentFee(
+        uint256 pricePerValidator
+    ) internal view returns (uint256) {
         return platform.getRequestDeposit() + pricePerValidator * SUBCOMMITTEE;
     }
 
     function _parseVerdict(string memory v) internal pure returns (Outcome) {
         bytes32 h = keccak256(bytes(v));
         if (h == keccak256(bytes("yes"))) return Outcome.Yes;
-        if (h == keccak256(bytes("no")))  return Outcome.No;
+        if (h == keccak256(bytes("no"))) return Outcome.No;
         return Outcome.Unset;
     }
 
