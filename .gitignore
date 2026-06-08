@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+artifacts/
+cache/
+
+# Environment
+.env
+
+# Editor
+.DS_Store
+.vscode/
+*.swp
