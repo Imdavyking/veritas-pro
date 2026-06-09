@@ -1,5 +1,5 @@
 // src/components/MarketDetail.jsx
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button, Input, Divider, PoolBar, Tag, SectionLabel } from "./ui.jsx";
 
 const STATUS_COLOR = {
@@ -35,7 +35,7 @@ export function MarketDetail({
   const [logLines, setLogLines] = useState([]);
   const [claimLoading, setClaimLoading] = useState(false);
   const [disputeLoading, setDisputeLoading] = useState(false);
-
+  const pollRef = useRef(null);
   const {
     question,
     resolutionSource,
@@ -45,6 +45,17 @@ export function MarketDetail({
     outcome,
     disputeDeadline,
   } = market;
+
+  // Poll every 4s while PendingResolve or Disputed — stop when resolved
+  useEffect(() => {
+    if (status === "PendingResolve" || status === "Disputed") {
+      pollRef.current = setInterval(() => {
+        actions.refreshMarket(market.id);
+      }, 4000);
+    }
+    return () => clearInterval(pollRef.current);
+  }, [status, market.id]); // eslint-disable-line
+
   const totalPool = parseFloat(yesPool) + parseFloat(noPool);
   const yesPct = totalPool > 0 ? (parseFloat(yesPool) / totalPool) * 100 : 50;
   const isExpired = Date.now() / 1000 >= market.deadline;
@@ -79,21 +90,16 @@ export function MarketDetail({
     }
     setResolving(true);
     setLogLines([]);
-    // Simulate live agent log during tx
-    let i = 0;
-    const interval = setInterval(() => {
-      if (i < AGENT_STEPS.length)
-        setLogLines((prev) => [...prev, AGENT_STEPS[i++]]);
-    }, 650);
     try {
       await actions.triggerResolution(signer, market.id);
-      onToast("Market resolved by agent ✓");
+      // tx confirmed — market is now PendingResolve, agent callback comes async
+      // polling (useEffect above) will auto-refresh until Resolved
+      onToast("Agent dispatched ✓ Polling for result every 4s…");
     } catch (e) {
       onToast(e.reason || e.message);
     } finally {
-      clearInterval(interval);
       setResolving(false);
-      setLogLines([]);
+      // keep logLines empty — status badge + polling message is enough
     }
   }
 
@@ -221,14 +227,14 @@ export function MarketDetail({
               const diff = market.deadline - Date.now() / 1000;
               if (diff <= 0) {
                 const ago = Math.abs(diff);
-                if (ago < 3600) return `ended ${Math.floor(ago / 60)}m ago`;
-                if (ago < 86400) return `ended ${Math.floor(ago / 3600)}h ago`;
-                return `ended ${Math.floor(ago / 86400)}d ago`;
+                if (ago < 3600) return `ended \${Math.floor(ago / 60)}m ago`;
+                if (ago < 86400) return `ended \${Math.floor(ago / 3600)}h ago`;
+                return `ended \${Math.floor(ago / 86400)}d ago`;
               }
-              if (diff < 3600) return `closes in ${Math.floor(diff / 60)}m`;
+              if (diff < 3600) return `closes in \${Math.floor(diff / 60)}m`;
               if (diff < 86400)
-                return `closes in ${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}m`;
-              return `closes in ${Math.floor(diff / 86400)}d ${Math.floor((diff % 86400) / 3600)}h`;
+                return `closes in \${Math.floor(diff / 3600)}h \${Math.floor((diff % 3600) / 60)}m`;
+              return `closes in \${Math.floor(diff / 86400)}d \${Math.floor((diff % 86400) / 3600)}h`;
             })()}
           </span>
           <span style={{ color: "var(--border2)" }}>·</span>
@@ -447,29 +453,50 @@ export function MarketDetail({
         )}
 
         {/* ── Pending resolve ── */}
-        {status === "PendingResolve" && (
+        {(status === "PendingResolve" || status === "Disputed") && (
           <>
             <Divider style={{ margin: "16px 0" }} />
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: 12,
-                color: "var(--text2)",
-              }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div
                 style={{
-                  width: 12,
-                  height: 12,
-                  border: "2px solid var(--amber)",
-                  borderTopColor: "transparent",
-                  borderRadius: "50%",
-                  animation: "spin .7s linear infinite",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 12,
+                  color: "var(--text2)",
                 }}
-              />
-              Agent resolution in-flight — waiting for callback…
+              >
+                <div
+                  style={{
+                    width: 12,
+                    height: 12,
+                    border: "2px solid var(--amber)",
+                    borderTopColor: "transparent",
+                    borderRadius: "50%",
+                    animation: "spin .7s linear infinite",
+                    flexShrink: 0,
+                  }}
+                />
+                {status === "Disputed"
+                  ? "Dispute agent re-examining verdict…"
+                  : "Agent resolution in-flight — waiting for callback…"}
+              </div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: "var(--text3)",
+                  background: "var(--bg3)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-sm)",
+                  padding: "8px 12px",
+                  lineHeight: 1.6,
+                }}
+              >
+                ↻ Polling chain every 4s for result. This page will update
+                automatically when the agent callback fires. Typically takes{" "}
+                <span style={{ color: "var(--amber)" }}>15–60 seconds</span> on
+                testnet.
+              </div>
             </div>
           </>
         )}
