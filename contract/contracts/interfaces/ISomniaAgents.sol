@@ -91,6 +91,17 @@ interface ILLMParseWebsiteAgent {
         string calldata schema
     ) external returns (string memory);
 
+    function ExtractString(
+        string memory key,
+        string memory description,
+        string[] memory options,
+        string memory prompt,
+        string memory url,
+        bool resolveUrl,
+        uint8 numPages,
+        uint8 confidenceThreshold
+    ) external returns (string memory);
+
     /// Direct mode: scrapes `url` directly and extracts `schema`.
     /// Returns: ABI-encoded string
     function parseWebsiteDirect(

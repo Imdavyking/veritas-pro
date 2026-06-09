@@ -253,18 +253,25 @@ contract Veritas is IAgentRequesterHandler {
         // Build Parse Website (search mode) payload.
         // Agent searches resolutionSource for news about the question,
         // extracts a single "outcome" field that must be "yes" or "no".
+        string[] memory options = new string[](2);
+        options[0] = "yes";
+        options[1] = "no";
         bytes memory payload = abi.encodeWithSelector(
-            ILLMParseWebsiteAgent.parseWebsiteSearch.selector,
-            m.resolutionSource,
+            ILLMParseWebsiteAgent.ExtractString.selector,
+            "outcome", // key
+            "Did this prediction come true?", // description
+            options, // constrain to yes/no
             string(
                 abi.encodePacked(
                     "Has the following prediction come true as of today? ",
-                    "Answer ONLY with the word 'yes' or 'no'. ",
                     "Prediction: ",
                     m.question
                 )
             ),
-            "outcome"
+            m.resolutionSource, // url/domain
+            true, // resolveUrl
+            1, // numPages
+            2 // confidenceThreshold
         );
 
         uint256 requestId = platform.createRequest{value: fee}(
