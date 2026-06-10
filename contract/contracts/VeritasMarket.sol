@@ -384,7 +384,8 @@ contract Veritas is IAgentRequesterHandler {
 
         m.outcome = newOutcome;
         m.status = MarketStatus.Resolved;
-        m.disputeDeadline = block.timestamp + 2 hours;
+        // m.disputeDeadline = block.timestamp + 2 hours; // real timing
+        m.disputeDeadline = block.timestamp + 5 minutes; // TESTING for demos
 
         emit MarketResolved(
             id,
