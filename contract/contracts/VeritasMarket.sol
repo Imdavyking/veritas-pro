@@ -310,29 +310,21 @@ contract Veritas is IAgentRequesterHandler {
         allowed[0] = "yes";
         allowed[1] = "no";
 
-        bytes memory payload = abi.encodeWithSelector(
+        bytes memory ppayload = abi.encodeWithSelector(
             ILLMInferenceAgent.inferString.selector,
-            string(
-                abi.encodePacked(
-                    "You are an impartial judge reviewing a disputed prediction market resolution. ",
-                    "Return only 'yes' if the prediction came true, or 'no' if it did not. ",
-                    "Be conservative: uphold the existing verdict unless you find clear evidence to the contrary."
-                )
-            ),
             string(
                 abi.encodePacked(
                     "Prediction: ",
                     m.question,
-                    "\n",
-                    "Resolution source used: ",
+                    "\nResolution source used: ",
                     m.resolutionSource,
-                    "\n",
-                    "Current verdict: ",
+                    "\nCurrent verdict: ",
                     m.outcome == Outcome.Yes ? "yes" : "no",
-                    "\n",
-                    "Re-evaluate and return your final answer."
+                    "\nRe-evaluate and return your final answer."
                 )
             ),
+            "You are an impartial judge reviewing a disputed prediction market resolution. Return only 'yes' if the prediction came true, or 'no' if it did not. Be conservative: uphold the existing verdict unless you find clear evidence to the contrary.",
+            false,
             allowed
         );
 

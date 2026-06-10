@@ -138,48 +138,9 @@ interface ILLMInferenceAgent {
     /// Single-turn classification constrained to one of `allowedValues`.
     /// Returns: ABI-encoded string matching one of allowedValues
     function inferString(
-        string calldata systemPrompt,
-        string calldata userMessage,
-        string[] calldata allowedValues
-    ) external returns (string memory);
-
-    /// Single-turn integer output clamped to [minVal, maxVal].
-    /// Returns: ABI-encoded int256
-    function inferNumber(
-        string calldata systemPrompt,
-        string calldata userMessage,
-        int256 minVal,
-        int256 maxVal
-    ) external returns (int256);
-
-    /// Multi-turn chat with full message history.
-    /// messages: alternating user/assistant turns as ABI-encoded string[]
-    /// Returns: ABI-encoded string
-    function inferChat(
-        string calldata systemPrompt,
-        string[] calldata messages
-    ) external returns (string memory);
-}
-
-// ─────────────────────────────────────────────────────────────
-//  IJsonApiAgent   agentId: 13174292974160097713
-//  Fetches and parses any public HTTP JSON endpoint.
-// ─────────────────────────────────────────────────────────────
-interface IJsonApiAgent {
-    /// Fetches `url`, navigates to `selector` (JSON-path-like syntax),
-    /// and returns the value scaled by 10^decimals.
-    /// e.g. selector "bitcoin.usd", decimals 8
-    /// Returns: ABI-encoded uint256
-    function fetchUint(
-        string calldata url,
-        string calldata selector,
-        uint8 decimals
-    ) external returns (uint256);
-
-    /// Same as fetchUint but returns a raw string value.
-    /// Returns: ABI-encoded string
-    function fetchString(
-        string calldata url,
-        string calldata selector
+        string memory prompt,
+        string memory system,
+        bool chainOfThought,
+        string[] memory allowedValues
     ) external returns (string memory);
 }
