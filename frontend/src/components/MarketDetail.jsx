@@ -227,14 +227,14 @@ export function MarketDetail({
               const diff = market.deadline - Date.now() / 1000;
               if (diff <= 0) {
                 const ago = Math.abs(diff);
-                if (ago < 3600) return `ended \${Math.floor(ago / 60)}m ago`;
-                if (ago < 86400) return `ended \${Math.floor(ago / 3600)}h ago`;
-                return `ended \${Math.floor(ago / 86400)}d ago`;
+                if (ago < 3600) return `ended ${Math.floor(ago / 60)}m ago`;
+                if (ago < 86400) return `ended ${Math.floor(ago / 3600)}h ago`;
+                return `ended ${Math.floor(ago / 86400)}d ago`;
               }
-              if (diff < 3600) return `closes in \${Math.floor(diff / 60)}m`;
+              if (diff < 3600) return `closes in ${Math.floor(diff / 60)}m`;
               if (diff < 86400)
-                return `closes in \${Math.floor(diff / 3600)}h \${Math.floor((diff % 3600) / 60)}m`;
-              return `closes in \${Math.floor(diff / 86400)}d \${Math.floor((diff % 86400) / 3600)}h`;
+                return `closes in ${Math.floor(diff / 3600)}h ${Math.floor((diff % 3600) / 60)}m`;
+              return `closes in ${Math.floor(diff / 86400)}d ${Math.floor((diff % 86400) / 3600)}h`;
             })()}
           </span>
           <span style={{ color: "var(--border2)" }}>·</span>
