@@ -225,6 +225,10 @@ contract Veritas is IAgentRequesterHandler {
         if (block.timestamp >= m.deadline) revert BettingClosed();
         if (msg.value == 0) revert ZeroBet();
 
+        // Prevent betting on both sides
+        if (isYes && noStakes[id][msg.sender] > 0) revert("Already bet NO");
+        if (!isYes && yesStakes[id][msg.sender] > 0) revert("Already bet YES");
+
         if (isYes) {
             m.yesPool += msg.value;
             yesStakes[id][msg.sender] += msg.value;
