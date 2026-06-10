@@ -48,6 +48,7 @@ export function MarketDetail({
   const [logLines, setLogLines] = useState([]);
   const [claimLoading, setClaimLoading] = useState(false);
   const [disputeLoading, setDisputeLoading] = useState(false);
+  const [userStake, setUserStake] = useState(null);
   const pollRef = useRef(null);
   const {
     question,
@@ -69,6 +70,21 @@ export function MarketDetail({
     return () => clearInterval(pollRef.current);
   }, [status, market.id]); // eslint-disable-line
 
+  // Fetch the current user's stake (yes/no) for this market
+  useEffect(() => {
+    let cancelled = false;
+    if (!address) {
+      setUserStake(null);
+      return;
+    }
+    actions.getStakes(market.id, address).then((stakes) => {
+      if (!cancelled) setUserStake(stakes);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [address, market.id, status]); // eslint-disable-line
+
   const totalPool = parseFloat(yesPool) + parseFloat(noPool);
   const yesPct = totalPool > 0 ? (parseFloat(yesPool) / totalPool) * 100 : 50;
   const isExpired = Date.now() / 1000 >= market.deadline;
@@ -89,6 +105,7 @@ export function MarketDetail({
       setBetAmount("");
       setBetSide(null);
       onToast(`Bet placed: ${betAmount} STT on ${betSide.toUpperCase()} ✓`);
+      actions.getStakes(market.id, address).then(setUserStake);
     } catch (e) {
       onToast(parseError(e));
     } finally {
@@ -332,6 +349,80 @@ export function MarketDetail({
             {(100 - yesPct).toFixed(0)}% NO
           </span>
         </div>
+
+        {/* ── Your prediction ── */}
+        {address &&
+          userStake &&
+          (parseFloat(userStake.yes) > 0 || parseFloat(userStake.no) > 0) && (
+            <>
+              <Divider style={{ margin: "16px 0" }} />
+              <SectionLabel>YOUR PREDICTION</SectionLabel>
+              {(() => {
+                const yourYes = parseFloat(userStake.yes);
+                const yourNo = parseFloat(userStake.no);
+                const yourSide = yourYes >= yourNo ? "Yes" : "No";
+                const yourAmount = yourYes >= yourNo ? yourYes : yourNo;
+                const won = status === "Resolved" && outcome === yourSide;
+                const lost =
+                  status === "Resolved" &&
+                  outcome &&
+                  outcome !== yourSide &&
+                  outcome !== "Invalid";
+
+                return (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      flexWrap: "wrap",
+                      fontSize: 12,
+                      color: "var(--text2)",
+                    }}
+                  >
+                    <span>
+                      You bet{" "}
+                      <span
+                        style={{
+                          color:
+                            yourSide === "Yes" ? "var(--green)" : "var(--red)",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {yourAmount.toFixed(2)} STT on {yourSide.toUpperCase()}
+                      </span>
+                    </span>
+                    {yourYes > 0 && yourNo > 0 && (
+                      <span style={{ color: "var(--text3)", fontSize: 11 }}>
+                        (also{" "}
+                        {yourSide === "Yes"
+                          ? yourNo.toFixed(2)
+                          : yourYes.toFixed(2)}{" "}
+                        STT on {yourSide === "Yes" ? "NO" : "YES"})
+                      </span>
+                    )}
+                    {status === "Resolved" && (
+                      <Tag
+                        color={
+                          won
+                            ? "var(--green)"
+                            : lost
+                              ? "var(--red)"
+                              : "var(--text3)"
+                        }
+                      >
+                        {won
+                          ? "✓ correct"
+                          : lost
+                            ? "✗ incorrect"
+                            : "outcome invalid"}
+                      </Tag>
+                    )}
+                  </div>
+                );
+              })()}
+            </>
+          )}
 
         {/* ── Bet UI ── */}
         {status === "Open" && !isExpired && (
