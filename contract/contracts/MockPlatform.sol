@@ -38,15 +38,32 @@ contract MockPlatform {
 
         Response[] memory responses = new Response[](1);
         responses[0] = Response({
-            result:      abi.encode(verdict),
-            receiptHash: keccak256(abi.encodePacked(requestId, verdict))
+            validator:     address(0),
+            result:        abi.encode(verdict),
+            status:        ResponseStatus.Success,
+            receipt:       uint256(keccak256(abi.encodePacked(requestId, verdict))),
+            timestamp:     block.timestamp,
+            executionCost: 0
         });
 
+        address[] memory subcommittee = new address[](0);
+        Response[] memory emptyResponses = new Response[](0);
         Request memory req = Request({
-            agentId:          s.agentId,
-            callbackContract: s.callbackContract,
+            id:              requestId,
+            requester:       msg.sender,
+            callbackAddress: s.callbackContract,
             callbackSelector: s.callbackSelector,
-            payload:          s.payload
+            subcommittee:    subcommittee,
+            responses:       emptyResponses,
+            responseCount:   1,
+            failureCount:    0,
+            threshold:       1,
+            createdAt:       block.timestamp,
+            deadline:        block.timestamp + 1 hours,
+            status:          ResponseStatus.Success,
+            consensusType:   ConsensusType.Majority,
+            remainingBudget: 0,
+            perAgentBudget:  0
         });
 
         (bool ok,) = s.callbackContract.call(

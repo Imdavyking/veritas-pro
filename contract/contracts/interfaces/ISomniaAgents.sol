@@ -17,23 +17,43 @@ pragma solidity ^0.8.20;
 // ─────────────────────────────────────────────────────────────
 
 // ── Enums / structs shared across all agent calls ─────────────
-
+enum ConsensusType {
+    Majority,
+    Threshold
+}
 enum ResponseStatus {
-    Success,
-    Failed,
-    TimedOut
+    None, // 0 - Default zero value (uninitialized storage)
+    Pending, // 1 - Awaiting responses
+    Success, // 2 - Consensus reached normally
+    Failed, // 3 - Validators reported failure
+    TimedOut // 4 - Request timed out
 }
 
 struct Response {
-    bytes result; // ABI-encoded return value
-    bytes32 receiptHash; // on-chain audit hash of what the agent read/produced
+    address validator;
+    bytes result;
+    ResponseStatus status;
+    uint256 receipt;
+    uint256 timestamp;
+    uint256 executionCost;
 }
 
 struct Request {
-    uint256 agentId;
-    address callbackContract;
+    uint256 id;
+    address requester;
+    address callbackAddress;
     bytes4 callbackSelector;
-    bytes payload;
+    address[] subcommittee;
+    Response[] responses;
+    uint256 responseCount;
+    uint256 failureCount;
+    uint256 threshold;
+    uint256 createdAt;
+    uint256 deadline;
+    ResponseStatus status;
+    ConsensusType consensusType;
+    uint256 remainingBudget;
+    uint256 perAgentBudget;
 }
 
 // ─────────────────────────────────────────────────────────────

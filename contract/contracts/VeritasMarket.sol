@@ -397,7 +397,7 @@ contract Veritas is IAgentRequesterHandler {
         emit MarketResolved(
             id,
             newOutcome,
-            responses[0].receiptHash,
+            bytes32(responses[0].receipt),
             isDispute
         );
     }
