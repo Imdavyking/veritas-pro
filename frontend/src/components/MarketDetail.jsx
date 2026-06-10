@@ -2,6 +2,19 @@
 import { useState, useEffect, useRef } from "react";
 import { Button, Input, Divider, PoolBar, Tag, SectionLabel } from "./ui.jsx";
 
+function parseError(e) {
+  const isInsufficientFunds =
+    e?.code === "INSUFFICIENT_FUNDS" ||
+    e?.error?.code === -32000 ||
+    e?.info?.error?.code === -32000 ||
+    e?.message?.toLowerCase().includes("insufficient funds");
+
+  if (isInsufficientFunds) {
+    return "Insufficient STT balance to cover this transaction + gas";
+  }
+  return e?.reason || e?.shortMessage || e?.message || "Transaction failed";
+}
+
 const STATUS_COLOR = {
   Open: "var(--green)",
   PendingResolve: "var(--amber)",
@@ -77,7 +90,7 @@ export function MarketDetail({
       setBetSide(null);
       onToast(`Bet placed: ${betAmount} STT on ${betSide.toUpperCase()} ✓`);
     } catch (e) {
-      onToast(e.reason || e.message);
+      onToast(parseError(e));
     } finally {
       setBetLoading(false);
     }
@@ -91,12 +104,14 @@ export function MarketDetail({
     setResolving(true);
     setLogLines([]);
     try {
+      console.log("Triggering resolution for market ID:", market.id);
       await actions.triggerResolution(signer, market.id);
       // tx confirmed — market is now PendingResolve, agent callback comes async
       // polling (useEffect above) will auto-refresh until Resolved
       onToast("Agent dispatched ✓ Polling for result every 4s…");
     } catch (e) {
-      onToast(e.reason || e.message);
+      console.log(e);
+      onToast(parseError(e));
     } finally {
       setResolving(false);
       // keep logLines empty — status badge + polling message is enough
@@ -113,7 +128,7 @@ export function MarketDetail({
       await actions.claimPayout(signer, market.id);
       onToast("Payout claimed ✓ STT sent to your wallet");
     } catch (e) {
-      onToast(e.reason || e.message);
+      onToast(parseError(e));
     } finally {
       setClaimLoading(false);
     }
@@ -129,7 +144,7 @@ export function MarketDetail({
       await actions.raiseDispute(signer, market.id);
       onToast("Dispute raised — LLM Inference agent re-examining verdict");
     } catch (e) {
-      onToast(e.reason || e.message);
+      onToast(parseError(e));
     } finally {
       setDisputeLoading(false);
     }

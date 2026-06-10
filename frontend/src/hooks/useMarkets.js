@@ -99,6 +99,22 @@ export function useMarkets() {
       const provider = getReadProvider();
       const contract = getContract(provider);
       const fee = await contract.resolutionFee();
+
+      // ── pre-flight check ──────────────────────────────────────
+      const balance = await signer.provider.getBalance(
+        await signer.getAddress(),
+      );
+      if (balance < fee) {
+        const needed = ethers.formatEther(fee);
+        const have = ethers.formatEther(balance);
+        throw Object.assign(new Error("INSUFFICIENT_FUNDS"), {
+          code: "INSUFFICIENT_FUNDS",
+          needed,
+          have,
+        });
+      }
+      // ─────────────────────────────────────────────────────────
+
       const writeable = getContract(signer);
       const tx = await writeable.triggerResolution(id, { value: fee });
       await tx.wait();
@@ -112,6 +128,19 @@ export function useMarkets() {
       const provider = getReadProvider();
       const contract = getContract(provider);
       const fee = await contract.disputeFee();
+      // ── pre-flight check ──────────────────────────────────────
+      const balance = await signer.provider.getBalance(
+        await signer.getAddress(),
+      );
+      if (balance < fee) {
+        const needed = ethers.formatEther(fee);
+        const have = ethers.formatEther(balance);
+        throw Object.assign(new Error("INSUFFICIENT_FUNDS"), {
+          code: "INSUFFICIENT_FUNDS",
+          needed,
+          have,
+        });
+      }
       const writeable = getContract(signer);
       const tx = await writeable.raiseDispute(id, { value: fee });
       await tx.wait();
