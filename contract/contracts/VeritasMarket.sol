@@ -310,7 +310,7 @@ contract Veritas is IAgentRequesterHandler {
         allowed[0] = "yes";
         allowed[1] = "no";
 
-        bytes memory ppayload = abi.encodeWithSelector(
+        bytes memory payload = abi.encodeWithSelector(
             ILLMInferenceAgent.inferString.selector,
             string(
                 abi.encodePacked(
