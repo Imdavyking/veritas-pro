@@ -15,7 +15,7 @@ pragma solidity ^0.8.20;
 //    4. handleResponse()      — platform callback writes outcome
 //    5. claimPayout()         — winners receive proportional share
 //
-//  Dispute flow (within 2h of resolution):
+//  Dispute flow (within 2h/5m(testing) of resolution):
 //    raiseDispute()           — dispatches LLM Inference agent
 //    handleResponse()         — second verdict may override first
 //
@@ -79,7 +79,7 @@ contract Veritas is IAgentRequesterHandler {
         MarketStatus status;
         uint256 resolveRequestId;
         uint256 disputeRequestId;
-        uint256 disputeDeadline; // 2h window after resolution
+        uint256 disputeDeadline; // 2h/5m(testing) window after resolution
         address creator;
     }
 
@@ -295,7 +295,7 @@ contract Veritas is IAgentRequesterHandler {
 
     // ─── Dispute ──────────────────────────────────────────────────
 
-    /// @notice Raise a dispute within 2h of resolution.
+    /// @notice Raise a dispute within 2h/5m(testing) of resolution.
     ///         Dispatches a stricter LLM Inference agent call.
     ///         Required: msg.value >= platform.getRequestDeposit() + 0.07 * 3 STT
     function raiseDispute(uint256 id) external payable {
@@ -398,7 +398,7 @@ contract Veritas is IAgentRequesterHandler {
     // ─── Payout ───────────────────────────────────────────────────
 
     /// @notice Winners call this to claim their proportional share of the pool.
-    ///         Can only be called after the 2h dispute window closes.
+    ///         Can only be called after the 2h/5m(testing) dispute window closes.
     function claimPayout(uint256 id) external {
         Market storage m = markets[id];
         if (m.status != MarketStatus.Resolved) revert NotResolved();
